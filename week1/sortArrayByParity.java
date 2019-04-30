@@ -19,5 +19,9 @@ class Solution
     }
 }
 
-/* Time complexity: O(n) since it iterates through the array 2n times
-   Space complexity: O(n) since it creates an array of size n */
+/*
+    Runtime: 1 ms (< 100%)
+    Memory usage: 42.2 MB (< 22.14%)
+    Time complexity: O(n) since it iterates through the array 2n times
+    Space complexity: O(n) since it creates an array of size n
+*/
