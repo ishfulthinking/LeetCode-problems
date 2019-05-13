@@ -1,0 +1,72 @@
+class Solution {
+    public List<String> findWords(char[][] board, String[] words)
+    {
+        if (board.length == 0 || board[0].length == 0 || words.length == 0)
+            return new ArrayList<String>();
+        
+        List<String> results = new ArrayList<>();
+        int numRows = board.length;
+        int numCols = board[0].length;
+        
+        for (int r = 0; r < numRows; r++)
+        {
+            for (int c = 0; c < numCols; c++)
+            {
+                for (String str : words)
+                {
+                    if (results.contains(str))
+                        continue;
+                    
+                    if (board[r][c] == str.charAt(0))
+                        if (findLetters(board, str, r, c, 0))
+                            results.add(str);
+                }
+            }
+        }
+        
+        return results;
+    }
+    
+    private boolean findLetters(char[][] board, String word, int row, int col, int letterIndex)
+    {
+        int numRows = board.length;
+        int numCols = board[0].length;
+        
+        if (letterIndex >= word.length())
+            return true;
+        if (row < 0 || row >= numRows || col < 0 || col >= numCols)
+            return false;
+        if (board[row][col] != word.charAt(letterIndex))
+            return false;
+        
+        char temp = board[row][col];
+        boolean wordFound = false;
+        board[row][col] = '/';
+        
+        if (findLetters(board, word, row + 1, col, letterIndex + 1)) {
+            board[row][col] = temp;
+            return true;
+        }
+        if (findLetters(board, word, row - 1, col, letterIndex + 1)) {
+            board[row][col] = temp;
+            return true;
+        }
+        if (findLetters(board, word, row, col + 1, letterIndex + 1)) {
+            board[row][col] = temp;
+            return true;
+        }
+        if (findLetters(board, word, row, col - 1, letterIndex + 1)) {
+            board[row][col] = temp;
+            return true;
+        }
+        
+        board[row][col] = temp;
+        
+        return false;
+    }
+}
+
+/*
+    Runtime: 425 ms (< 17.25%... yikes!)
+    Memory usage: 29.4 MB
+*/
