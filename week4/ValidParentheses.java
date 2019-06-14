@@ -1,59 +1,64 @@
-class Solution {
+class Solution
+{
     public boolean isValid(String s)
     {
-        Stack<Integer> stack = new Stack<>();
-        int strLen = s.length();
+        Stack<Character> parentheses = new Stack<>();
         
-        for (int i = 0; i < strLen; i++)
+        for (char symbol : s.toCharArray())
         {
-            // If stack is empty, we can add an opener.
-            if (stack.isEmpty())
+            // If it's an opening parenthesis, push it onto the stack.
+            if (isOpener(symbol))
+                parentheses.push(symbol);
+            // Otherwise, check if it's the proper closing parenthesis.
+            else
             {
-                if (isOpener(s.charAt(i)))
-                    stack.push(getType(s.charAt(i)));
-                // But if it's not an opener, that means we have invalid entry.
+                // If the stack is empty, we instantly know it's invalid.
+                if (parentheses.empty())
+                    return false;
+                
+                // If the symbol is the right closing parenthesis, just pop the stack.
+                if (isCounterpart(parentheses.peek(), symbol))
+                    parentheses.pop();
+                // Otherwise, it's invalid.
                 else
                     return false;
             }
-            else
-            {
-                // If stack has stuff, allow any openers to be added.
-                if (isOpener(s.charAt(i)))
-                {
-                    stack.push(getType(s.charAt(i)));
-                }
-                // If it's a closer, check the top of the stack to make sure the two match.
-                else
-                {
-                    if (stack.peek() != getType(s.charAt(i)))
-                        return false;
-                    else
-                        stack.pop();
-                }
-            }
         }
-        if (!stack.isEmpty())
+        // After we've gone through all the symbols, if there's anything on the stack, it's a no-go.
+        if (!parentheses.empty())
             return false;
         
         return true;
     }
     
-    public boolean isOpener(char in)
+    private boolean isOpener(char symbol)
     {
-        if (in == '(' || in == '{' || in == '[')
+        if (symbol == '(')
             return true;
-        else
-            return false;
+        if (symbol == '{')
+            return true;
+        if (symbol == '[')
+            return true;
+        
+        return false;
     }
     
-    public int getType(char in)
+    private boolean isCounterpart(char opener, char closer)
     {
-        if (in == '(' || in == ')')
-            return 1;
-        if (in == '{' || in == '}')
-            return 2;
-        if (in == '[' || in == ']')
-            return 3;
-        return 0;
-    }   
+        if (opener == '(' && closer == ')')
+            return true;
+        if (opener == '{' && closer == '}')
+            return true;
+        if (opener == '[' && closer == ']')
+            return true;
+        
+        return false;
+    }
 }
+
+/*
+    Runtime: 1 ms (< 98.81%)
+    Memory usage: 34.4 MB (< 99.97%)
+    Time complexity: O(n) as we go through all n characters in string s.
+    Space complexity: O(n) since at worst, the input string is all opening parentheses before we return false.
+*/
