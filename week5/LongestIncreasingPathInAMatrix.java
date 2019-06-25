@@ -1,79 +1,75 @@
 class Solution
 {
-    // To avoid 4 different if clauses, we can run a for loop of each direction to get neighbors.
-    private final int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-    
-    public int longestIncreasingPath(int[][] matrix)
+    public int networkDelayTime(int[][] edges, int numNodes, int source)
     {
-        if (matrix.length == 0 || matrix[0].length == 0)
-            return 0;
+        // Note: times[i] = (source, target, time it takes to travel)
         
-        // To avoid having the check for bounds, we can copy the existing matrix and pad all 4 sides with 0's.
-        int[][] paddedMatrix = new int[matrix.length + 2][matrix[0].length + 2];
-        for (int i = 0; i < matrix.length; i++)
+        // For this problem, we can use Dijkstra's algorithm, which finds the lowest-cost path between
+        // a source node and a target node. We'll put all the nodes into a map, then use a minheap to
+        // order them by the cost it takes to get there. That way we always use the lowest-cost way
+        // to get there for paths that diverge and then converge.
+        int result = 0;
+        
+        // First, put the graph into a map of nodes and their adjacent nodes.
+        Map<Integer, List<int[]>> graph = new HashMap<>();
+        for (int[] edge : edges)
         {
-            // params: arraycopy(source, starting index in source, dest, starting index in dest, num of elements)
-            System.arraycopy(matrix[i], 0, paddedMatrix[i + 1], 1, matrix[0].length);
+            if (!graph.containsKey(edge[0]))
+                graph.put(edge[0], new ArrayList<int[]>());
+            // Put the edge in the source's adjacency list, along with its cost.
+            graph.get(edge[0]).add(new int[]{edge[1], edge[2]});
         }
         
-        // To get the outdegrees, we can go to every non-padding cell and check if it would connect to a neighbor,
-        // i.e. its neighbor has a higher value than it.
-        int[][] outdegree = new int[matrix.length + 2][matrix[0].length + 2];
-        for (int row = 1; row <= matrix.length; row++)
+        // Once we've created the map representation of the graph, create a priority queue
+        // that orders itself by the weights of its nodes.
+        PriorityQueue<int[]> heap = new PriorityQueue<>((node1, node2) -> node1[1] - node2[1]);
+        heap.add(new int[]{source, 0});
+        
+        HashMap<Integer, Integer> distances = new HashMap<>();
+        
+        // While the heap has something in it, 
+        while (!heap.isEmpty())
         {
-            for (int col = 1; col <= matrix[0].length; col++)
+            // get the node at the front, which has the lowest cost thanks to the minheap.
+            int[] nodeInfo = heap.poll();
+            int node = nodeInfo[0];
+            int dist = nodeInfo[1];
+            
+            // If we've already processed that node, just skip doing it again.
+            if (distances.containsKey(node))
+                continue;
+            
+            distances.put(node, dist);
+            
+            // If the node has connections, check how using the node as a stepping stone along the path
+            // helps the final cost of the path for each connection.
+            if (graph.containsKey(node))
             {
-                for (int[] direction : directions)
+                for (int[] edge : graph.get(node))
                 {
-                    if (paddedMatrix[row][col] < paddedMatrix[row + direction[0]][col + direction[1]])
-                        outdegree[row][col]++;
+                    int dest = edge[0];
+                    int cost = edge[1];
+                    // If we haven't processed the distance to reach that node yet, put it in the queue.
+                    if (!distances.containsKey(dest))
+                        heap.add(new int[]{dest, dist + cost});
                 }
             }
         }
+        // We should've processed all the nodes now, so if we haven't, it's a failure.
+        if (distances.size() != numNodes)
+            return -1;
+        // Otherwise, find the longest path and return it.
+        for (int pathLength : distances.values())
+            result = Math.max(result, pathLength);
         
-        // We'll save the accessible (i.e. outdegree of 0) nodes as 2-cell arrays of their row and col in a list.
-        List<int[]> accessibleCells = new ArrayList<>();
-        for (int row = 1; row < outdegree.length - 1; row++)
-        {
-            for (int col = 1; col < outdegree[0].length - 1; col++)
-            {
-                if (outdegree[row][col] == 0)
-                    accessibleCells.add(new int[]{row, col});
-            }
-        }
-        
-        // Now, go through the list of accessible cells and "delete" the connection it has to its neighbor.
-        // If the neighbor now has no connections, it's now accessible, so repeat until we've gotten to the
-        // end of every possible path of accessible cells.
-        int pathLength = 0;
-        while (!accessibleCells.isEmpty())
-        {
-            pathLength++;
-            // We can't edit the list while we iterate through it, so we have to make a new list each iteration.
-            List<int[]> newlyAccessible = new ArrayList<>();
-            for (int[] cell : accessibleCells)
-            {   
-                for (int[] direction : directions)
-                {
-                    int neighborRow = cell[0] + direction[0];
-                    int neighborCol = cell[1] + direction[1];
-
-                    // If the neighbor is lower than it, subtract from the outdegree.
-                    if (paddedMatrix[cell[0]][cell[1]] > paddedMatrix[neighborRow][neighborCol])
-                    {
-                        outdegree[neighborRow][neighborCol]--;
-                        // If the neighbor's outdegree is now 0, it's now accessible and we can add it to the list.
-                        if (outdegree[neighborRow][neighborCol] == 0)
-                        {
-                            newlyAccessible.add(new int[]{neighborRow, neighborCol});
-                        }
-                    }    
-                }
-            }
-            // Update the list of accessible cells.
-            accessibleCells = newlyAccessible;
-        }
-        
-        return pathLength;
+        return result;
     }
 }
+
+/*
+    Runtime: 56 ms (< 39.53%)
+    Memory usage: 54.5 MB (< 36.27%)
+    Time complexity: O(E log E) since we process all E edges, and for each, we process log E edges.
+        That log E comes from the usage of the minheap, which sorts our input automatically in logarithmic time.
+    Space complexity: O(N + E) since at worst, our list and map contain every node + plus all the edges.
+*/
